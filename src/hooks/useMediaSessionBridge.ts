@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { PlayerState } from '../types';
 import type { SongResult } from '../types';
@@ -11,8 +11,11 @@ import {
 import { usePlaybackStore } from '../stores/usePlaybackStore';
 import { useHifiTrackStore } from '../services/hifi/hifiPlayback';
 import { getObservedMedia } from '../services/hifi/hifiMediaShim';
+import { createMediaActionGate, resolveMediaKeyAction, type MediaKeyAction } from '../utils/mediaKeys';
 
 // Bridges Folia playback state to the browser Media Session API.
+// Hardware media keys that reach the page as keydown instead (Android WebView, e.g. Fully Kiosk on a
+// TV box) run the same four actions; one key press arriving both ways runs once (utils/mediaKeys.ts).
 export type UseMediaSessionBridgeOptions = {
     audioRef: RefObject<HTMLAudioElement | null>;
     /**
@@ -58,9 +61,61 @@ export const useMediaSessionBridge = ({
     const playbackRoute = usePlaybackStore(state => state.playbackRoute);
     const hifiTrackKey = useHifiTrackStore(state => state.current?.trackKey ?? null);
 
+    const isPlayingRef = useRef(playerState === PlayerState.PLAYING);
+    isPlayingRef.current = playerState === PlayerState.PLAYING;
+    const actionGateRef = useRef(createMediaActionGate());
+
     useEffect(() => {
+        const runAction = async (action: MediaKeyAction) => {
+            if (!actionGateRef.current.pass(action, performance.now())) {
+                return;
+            }
+            switch (action) {
+                case 'play':
+                    if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
+                        return;
+                    }
+                    try {
+                        await mediaSessionPlayRef.current();
+                    } catch (e) {
+                        console.error('MediaSession play failed', e);
+                    }
+                    return;
+                case 'pause':
+                    if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
+                        return;
+                    }
+                    mediaSessionPauseRef.current();
+                    return;
+                case 'previoustrack':
+                    if (isNowPlayingControlDisabledRef.current) {
+                        return;
+                    }
+                    mediaSessionPrevRef.current();
+                    return;
+                case 'nexttrack':
+                    if (isNowPlayingControlDisabledRef.current) {
+                        return;
+                    }
+                    void mediaSessionNextRef.current();
+            }
+        };
+
+        const handleMediaKey = (event: KeyboardEvent) => {
+            if (event.repeat || event.defaultPrevented) {
+                return;
+            }
+            const action = resolveMediaKeyAction(event.key, isPlayingRef.current);
+            if (!action) {
+                return;
+            }
+            event.preventDefault();
+            void runAction(action);
+        };
+        window.addEventListener('keydown', handleMediaKey);
+
         if (!('mediaSession' in navigator)) {
-            return;
+            return () => window.removeEventListener('keydown', handleMediaKey);
         }
 
         const mediaSession = navigator.mediaSession;
@@ -75,38 +130,13 @@ export const useMediaSessionBridge = ({
             }
         };
 
-        setActionHandlerSafely('play', async () => {
-            if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
-                return;
-            }
-
-            try {
-                await mediaSessionPlayRef.current();
-            } catch (e) {
-                console.error('MediaSession play failed', e);
-            }
-        });
-        setActionHandlerSafely('pause', () => {
-            if (isNowPlayingControlDisabledRef.current || !audioRef.current) {
-                return;
-            }
-
-            mediaSessionPauseRef.current();
-        });
-        setActionHandlerSafely('previoustrack', () => {
-            if (isNowPlayingControlDisabledRef.current) {
-                return;
-            }
-            mediaSessionPrevRef.current();
-        });
-        setActionHandlerSafely('nexttrack', () => {
-            if (isNowPlayingControlDisabledRef.current) {
-                return;
-            }
-            void mediaSessionNextRef.current();
-        });
+        setActionHandlerSafely('play', () => runAction('play'));
+        setActionHandlerSafely('pause', () => void runAction('pause'));
+        setActionHandlerSafely('previoustrack', () => void runAction('previoustrack'));
+        setActionHandlerSafely('nexttrack', () => void runAction('nexttrack'));
 
         return () => {
+            window.removeEventListener('keydown', handleMediaKey);
             setActionHandlerSafely('play', null);
             setActionHandlerSafely('pause', null);
             setActionHandlerSafely('previoustrack', null);

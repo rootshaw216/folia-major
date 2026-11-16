@@ -44,6 +44,7 @@ const STYLES = [
     ['cappella', 'Cappella', 'DOM'],
     ['diorama', '镜台', 'three.js'],
     ['still', 'Still', 'DOM，不画背景'],
+    ['vetro', '透屏', 'DOM，不画背景'],
 ];
 
 const style = ([id, name, drawsWith]) => ({

@@ -30,6 +30,7 @@ export const BUILTIN_VISUALIZER_MODES = [
     'still',
     'tempera',
     'tilt',
+    'vetro',
 ] as const;
 
 export const BUILTIN_VISUALIZER_BACKGROUND_MODES = [
