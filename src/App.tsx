@@ -115,6 +115,7 @@ import { useLocalLibraryAutoScan } from './hooks/useLocalLibraryAutoScan';
 import { useElectronVideoExportController } from './hooks/useElectronVideoExportController';
 import { useElectronWindowPlaybackHandoff } from './components/app/playback/restore/useElectronWindowPlaybackHandoff';
 import { useMediaSessionBridge } from './hooks/useMediaSessionBridge';
+import { useLyricStyleKeys } from './hooks/useLyricStyleKeys';
 import { usePlayerChromeAutoHide } from './hooks/usePlayerChromeAutoHide';
 import { useMacWallpaperHitRegions } from './hooks/useMacWallpaperHitRegions';
 import { useIdleCursorHide } from './hooks/useIdleCursorHide';
@@ -1441,6 +1442,8 @@ export default function App() {
         isNowPlayingControlDisabledRef,
     };
     useMediaSessionBridge(mediaSessionOptions);
+    // LyricBox: F9 / F8 (the remote's long press on button 2 sends F9) step through the lyric styles.
+    useLyricStyleKeys();
     // Linux: on the HiFi route the system media controls come from main's MPRIS, fed the same.
     useHifiMpris(mediaSessionOptions);
     useHifiMediaSessionKeepAlive();
