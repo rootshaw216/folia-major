@@ -9,6 +9,7 @@ import {
 } from '../../visualizer/backgrounds/registry';
 import { resolveVisualizerBackgroundMode } from '../../../stores/visualizerSettingsPersistence';
 import { useVisualizerModeStepper } from '../../../hooks/useVisualizerModeStepper';
+import { boxAllowsBackground, boxAllowsVisualizer } from '../../../utils/lyricboxBox';
 import { QuickControlChip, QuickControlToggle } from '../../shared/QuickControlChip';
 import { WholeWord } from 'lucide-react';
 import { openCommandPaletteCommand } from '../../../stores/useAppViewStore';
@@ -91,7 +92,8 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
 
     const visualizerOptions = useMemo(
         () => [
-            ...VISUALIZER_REGISTRY.map(entry => ({
+            // LyricBox：电视盒子上只列它跑得动的样式（utils/lyricboxBox.ts）
+            ...VISUALIZER_REGISTRY.filter(entry => boxAllowsVisualizer(entry.mode)).map(entry => ({
                 value: entry.mode,
                 label: getVisualizerModeLabel(entry.mode, t),
             })),
@@ -103,7 +105,7 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
     const stepVisualizerMode = useVisualizerModeStepper(visualizerModes);
 
     const backgroundOptions = useMemo(
-        () => VISUALIZER_BACKGROUND_REGISTRY.map(entry => ({
+        () => VISUALIZER_BACKGROUND_REGISTRY.filter(entry => boxAllowsBackground(entry.mode)).map(entry => ({
             value: entry.mode,
             label: getVisualizerBackgroundModeLabel(entry.mode, t),
         })),

@@ -116,6 +116,8 @@ import { useElectronVideoExportController } from './hooks/useElectronVideoExport
 import { useElectronWindowPlaybackHandoff } from './components/app/playback/restore/useElectronWindowPlaybackHandoff';
 import { useMediaSessionBridge } from './hooks/useMediaSessionBridge';
 import { useLyricStyleKeys } from './hooks/useLyricStyleKeys';
+import { useLyricBoxBox } from './hooks/useLyricBoxBox';
+import { filterBoxVisualizers } from './utils/lyricboxBox';
 import { usePlayerChromeAutoHide } from './hooks/usePlayerChromeAutoHide';
 import { useMacWallpaperHitRegions } from './hooks/useMacWallpaperHitRegions';
 import { useIdleCursorHide } from './hooks/useIdleCursorHide';
@@ -535,10 +537,11 @@ export default function App() {
         onModeChange: showPlayerChromeVisibilityModeStatus,
     });
 
+    const boxRandomVisualizerModes = useMemo(() => filterBoxVisualizers(randomVisualizerModes), [randomVisualizerModes]);
     useRandomVisualizerMode({
         currentSong,
         enabled: randomVisualizerModePerSong,
-        modes: randomVisualizerModes,
+        modes: boxRandomVisualizerModes,
         visualizerMode,
         setVisualizerMode: handleSetVisualizerMode,
     });
@@ -1444,6 +1447,8 @@ export default function App() {
     useMediaSessionBridge(mediaSessionOptions);
     // LyricBox: F9 / F8 (the remote's long press on button 2 sends F9) step through the lyric styles.
     useLyricStyleKeys();
+    // LyricBox: on the TV box only, keep to the lyric styles and backgrounds it can run (utils/lyricboxBox.ts).
+    useLyricBoxBox();
     // Linux: on the HiFi route the system media controls come from main's MPRIS, fed the same.
     useHifiMpris(mediaSessionOptions);
     useHifiMediaSessionKeepAlive();

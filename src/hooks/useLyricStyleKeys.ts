@@ -3,6 +3,7 @@ import { VISUALIZER_REGISTRY } from '../components/visualizer/registry';
 import { RANDOM_VISUALIZER_CHOICE } from '../components/visualizer/random/lyricStyleChoices';
 import type { VisualizerMode } from '../types';
 import { resolveLyricStyleStep } from '../utils/lyricStyleKeys';
+import { filterBoxVisualizers } from '../utils/lyricboxBox';
 import { useVisualizerModeStepper } from './useVisualizerModeStepper';
 
 // src/hooks/useLyricStyleKeys.ts
@@ -11,7 +12,8 @@ import { useVisualizerModeStepper } from './useVisualizerModeStepper';
 
 export const useLyricStyleKeys = () => {
     const modes = useMemo(
-        () => [...VISUALIZER_REGISTRY.map(entry => entry.mode), RANDOM_VISUALIZER_CHOICE as VisualizerMode],
+        // 盒子上只在它跑得动的样式里切（utils/lyricboxBox.ts）
+        () => filterBoxVisualizers([...VISUALIZER_REGISTRY.map(entry => entry.mode), RANDOM_VISUALIZER_CHOICE as VisualizerMode]),
         [],
     );
     const step = useVisualizerModeStepper(modes);
