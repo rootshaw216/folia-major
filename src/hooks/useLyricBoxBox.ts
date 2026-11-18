@@ -13,12 +13,14 @@ import {
     boxAllowsVisualizer,
     filterBoxBackgrounds,
     isLyricBoxBox,
+    isLyricBoxLite,
+    lyricBoxEdition,
     summarizeFrames,
 } from '../utils/lyricboxBox';
 
 // src/hooks/useLyricBoxBox.ts
-// LyricBox 盒子性能档（只在盒子播放器里生效，见 utils/lyricboxBox.ts）：
-// 1. 选中的歌词样式 / 背景不在盒子名单里时，换成透屏 / 能跑的背景并提示一次；
+// LyricBox 盒子（只在盒子播放器里生效，见 utils/lyricboxBox.ts）：
+// 1. 精简版：选中的歌词样式 / 背景不在盒子名单里时，换成透屏 / 能跑的背景并提示一次（完整版不限制）；
 // 2. F10 依次换背景（只在名单里换，供实测和不方便点面板时用）；
 // 3. 每 5 秒在控制台写一行 [lyricbox-perf]（GeckoView 转到 logcat），记录当前样式、背景与页面帧率。
 
@@ -28,7 +30,7 @@ export const useLyricBoxBox = () => {
     const { t } = useTranslation();
 
     useEffect(() => {
-        if (!isLyricBoxBox()) return undefined;
+        if (!isLyricBoxLite()) return undefined;
         const label = (key: string) => t(key);
         const guard = () => {
             const s = useVisualizerSettingsStore.getState();
@@ -76,6 +78,7 @@ export const useLyricBoxBox = () => {
                 const s = useVisualizerSettingsStore.getState();
                 const stats = summarizeFrames(stamps);
                 console.info('[lyricbox-perf]', JSON.stringify({
+                    edition: lyricBoxEdition(),
                     mode: s.randomVisualizerModePerSong ? `random:${s.visualizerMode}` : s.visualizerMode,
                     bg: resolveVisualizerBackgroundMode(s.visualizerBackgroundMode, s.visualizerMode),
                     ...stats,

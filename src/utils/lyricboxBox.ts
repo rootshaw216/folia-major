@@ -1,13 +1,29 @@
 // src/utils/lyricboxBox.ts
-// LyricBox：电视盒子性能档。LyricBox 的盒子播放器（自带 GeckoView 的安卓壳）在浏览器标识里带 LyricBoxBox，
-// 只有它才启用这里的限制；电脑、手机上的 Folia 不受影响。
-// 盒子（X98 Plus：4×Cortex-A55 + Mali Bifrost，1920×1080）跑不动的歌词样式与背景不出现在面板、F9、随机池里，
-// 已经选上的（旧设置、命令面板）自动换成能跑的。名单来自盒子上的实测（LyricBox box-setup/perfbench.py）。
+// LyricBox：电视盒子的两个版本。LyricBox 的盒子播放器（自带 GeckoView 的安卓壳）在浏览器标识里带
+// “LyricBoxBox/1 (lite)” 或 “LyricBoxBox/1 (full)”；电脑、手机上的 Folia 不受影响。
+// - 精简版 lite（安卓版本低、性能弱的盒子）：跑不动的歌词样式与背景不出现在面板、F9、随机池里，
+//   已经选上的（旧设置、命令面板）自动换成能跑的。名单来自盒子上的实测（LyricBox box-setup/perfbench.py）。
+// - 完整版 full：全部样式与背景都开放。
+// 两个版本都开机直接进歌词播放页、都写帧率日志。版本由盒子播放器决定（默认安卓 11 及以下用精简版），
+// 换盒子时一条命令切换：python box-app/appctl.py edition lite|full|auto。
 
 export const LYRICBOX_BOX_UA_TOKEN = 'LyricBoxBox';
 
-export const isLyricBoxBox = (ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : ''): boolean =>
-    ua.includes(LYRICBOX_BOX_UA_TOKEN);
+export type LyricBoxEdition = 'lite' | 'full';
+
+const currentUa = (): string => (typeof navigator !== 'undefined' ? navigator.userAgent : '');
+
+export const isLyricBoxBox = (ua: string = currentUa()): boolean => ua.includes(LYRICBOX_BOX_UA_TOKEN);
+
+/** 盒子上的版本；不是盒子时为 null。标识里没写版本的旧播放器按精简版算。 */
+export const lyricBoxEdition = (ua: string = currentUa()): LyricBoxEdition | null => {
+    if (!isLyricBoxBox(ua)) return null;
+    const m = /LyricBoxBox\/\d+\s*\((lite|full)\)/.exec(ua);
+    return m ? (m[1] as LyricBoxEdition) : 'lite';
+};
+
+/** 是否按盒子名单限制样式与背景（只有精简版）。 */
+export const isLyricBoxLite = (ua: string = currentUa()): boolean => lyricBoxEdition(ua) === 'lite';
 
 /**
  * 盒子上跑得动的歌词样式（registry 的 mode）。2026-11-18 在盒子（1920×1080 输出、“漫游”背景）上用页面帧率实测
@@ -30,17 +46,18 @@ export const BOX_FALLBACK_BACKGROUND = 'monet';
 /** 面板与 F9 里的“随机”选项，不是一个样式，保留。 */
 const RANDOM_CHOICE = '__random__';
 
-export const boxAllowsVisualizer = (mode: string, box = isLyricBoxBox()): boolean =>
-    !box || mode === RANDOM_CHOICE || BOX_ALLOWED_VISUALIZERS.has(mode);
+// 下面的 lite 参数 = 是否按精简版名单限制（默认看当前浏览器标识）。
+export const boxAllowsVisualizer = (mode: string, lite = isLyricBoxLite()): boolean =>
+    !lite || mode === RANDOM_CHOICE || BOX_ALLOWED_VISUALIZERS.has(mode);
 
-export const boxAllowsBackground = (mode: string, box = isLyricBoxBox()): boolean =>
-    !box || BOX_ALLOWED_BACKGROUNDS.has(mode);
+export const boxAllowsBackground = (mode: string, lite = isLyricBoxLite()): boolean =>
+    !lite || BOX_ALLOWED_BACKGROUNDS.has(mode);
 
-export const filterBoxVisualizers = <T extends string>(modes: readonly T[], box = isLyricBoxBox()): T[] =>
-    modes.filter(mode => boxAllowsVisualizer(mode, box));
+export const filterBoxVisualizers = <T extends string>(modes: readonly T[], lite = isLyricBoxLite()): T[] =>
+    modes.filter(mode => boxAllowsVisualizer(mode, lite));
 
-export const filterBoxBackgrounds = <T extends string>(modes: readonly T[], box = isLyricBoxBox()): T[] =>
-    modes.filter(mode => boxAllowsBackground(mode, box));
+export const filterBoxBackgrounds = <T extends string>(modes: readonly T[], lite = isLyricBoxLite()): T[] =>
+    modes.filter(mode => boxAllowsBackground(mode, lite));
 
 /** 一段时间里的帧时间戳（毫秒）→ 帧率与超过 100 ms 的长帧数（盒子上每 5 秒写一次日志，供实测）。 */
 export const summarizeFrames = (stamps: readonly number[]): { fps: number; long: number; worstMs: number } => {

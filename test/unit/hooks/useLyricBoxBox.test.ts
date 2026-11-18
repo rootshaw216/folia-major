@@ -107,6 +107,17 @@ describe('useLyricBoxBox', () => {
         expect(state().visualizerBackgroundMode).toBe('monet');
     });
 
+    it('full edition: no limits, F10 walks every background', () => {
+        setUa('Mozilla/5.0 (X11; Linux armv7l; rv:160.0) Gecko/20100101 Firefox/160.0 LyricBoxBox/1 (full)');
+        mount();
+        expect(state().visualizerMode).toBe('classic');
+        expect(state().visualizerBackgroundMode).toBe('latent');
+        press('F10');
+        expect(state().visualizerBackgroundMode).toBe('url');
+        act(() => state().handleSetVisualizerMode('machi', { notify: false }));
+        expect(state().visualizerMode).toBe('machi');
+    });
+
     it('anywhere else: changes nothing', () => {
         setUa('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0');
         mount();

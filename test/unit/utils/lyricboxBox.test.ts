@@ -12,6 +12,8 @@ import {
     filterBoxBackgrounds,
     filterBoxVisualizers,
     isLyricBoxBox,
+    isLyricBoxLite,
+    lyricBoxEdition,
     LYRICBOX_BOX_UA_TOKEN,
     summarizeFrames,
 } from '@/utils/lyricboxBox';
@@ -26,6 +28,18 @@ describe('isLyricBoxBox', () => {
         expect(isLyricBoxBox(BOX_UA)).toBe(true);
         expect(isLyricBoxBox('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0')).toBe(false);
         expect(isLyricBoxBox('')).toBe(false);
+    });
+});
+
+describe('editions', () => {
+    it('lite and full come from the box player, older players count as lite', () => {
+        expect(lyricBoxEdition('Firefox/160.0 LyricBoxBox/1 (lite)')).toBe('lite');
+        expect(lyricBoxEdition('Firefox/160.0 LyricBoxBox/1 (full)')).toBe('full');
+        expect(lyricBoxEdition(BOX_UA)).toBe('lite');
+        expect(lyricBoxEdition('Mozilla/5.0 Chrome/140.0')).toBeNull();
+        expect(isLyricBoxLite('LyricBoxBox/1 (full)')).toBe(false);
+        expect(isLyricBoxLite('LyricBoxBox/1 (lite)')).toBe(true);
+        expect(isLyricBoxLite('Mozilla/5.0 Chrome/140.0')).toBe(false);
     });
 });
 
