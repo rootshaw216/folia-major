@@ -1,3 +1,5 @@
+// LyricBox: first, so the TV box's startup defaults are in place before any store reads them.
+import './lyricboxBoxBoot';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n/config';

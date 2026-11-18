@@ -49,3 +49,31 @@ export const summarizeFrames = (stamps: readonly number[]): { fps: number; long:
     const span = (stamps[stamps.length - 1] - stamps[0]) / 1000;
     return { fps: Math.round(((stamps.length - 1) / span) * 10) / 10, long, worstMs: Math.round(worst) };
 };
+
+/**
+ * 盒子开机直接进歌词播放页：打开“启动时打开播放界面”，播放入口设为歌词播放页（不是唱片墙）。
+ * 由 src/lyricboxBoxBoot.ts 在所有模块之前执行，store 读本地存储时已是这些值。返回改动了的键。
+ */
+export const BOX_STARTUP_DEFAULTS: Readonly<Record<string, string>> = {
+    open_player_on_launch: 'true',
+    playback_entry_view: 'player',
+};
+
+export const applyBoxStartupDefaults = (
+    storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+    box = isLyricBoxBox(),
+): string[] => {
+    if (!box || !storage) return [];
+    const changed: string[] = [];
+    for (const [key, value] of Object.entries(BOX_STARTUP_DEFAULTS)) {
+        try {
+            if (storage.getItem(key) !== value) {
+                storage.setItem(key, value);
+                changed.push(key);
+            }
+        } catch {
+            // 存储不可用时照常启动
+        }
+    }
+    return changed;
+};
