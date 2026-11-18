@@ -9,17 +9,23 @@ export const LYRICBOX_BOX_UA_TOKEN = 'LyricBoxBox';
 export const isLyricBoxBox = (ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : ''): boolean =>
     ua.includes(LYRICBOX_BOX_UA_TOKEN);
 
-/** 盒子上能流畅运行的歌词样式（registry 的 mode）。“随机”另算：它只从这里面挑。 */
-export const BOX_ALLOWED_VISUALIZERS: ReadonlySet<string> = new Set([
-    'sonnet', 'tempera', 'lumiere', 'hanabi', 'machi', 'nebbia', 'classic', 'cadenza', 'partita', 'fume',
-    'tilt', 'claddagh', 'monet', 'pendolo', 'cappella', 'diorama', 'still', 'vetro',
-]);
+/**
+ * 盒子上跑得动的歌词样式（registry 的 mode）。2026-11-18 在盒子（1920×1080 输出、“漫游”背景）上用页面帧率实测
+ * （LyricBox box-setup/perfbench.py raf-styles，结果 box-setup/perf/raf_styles.json），每秒 15 帧以上的保留：
+ * 透屏 58、静止 59、莫奈 20、群唱 19.5、倾诉 17、心象 15.5。
+ * 屏蔽：回环 12.9、时计 12.5、流光 11.6、云阶 8.2、镜台 7.7、商籁 7.4、花火 5、雾 4.3、凝彩 4.1、浮名 3.9、绘光 2.2、町景 1.1。
+ * 换成 1024×768 输出（iPad 屏）后可重测放宽。“随机”另算：它只从这里面挑。
+ */
+export const BOX_ALLOWED_VISUALIZERS: ReadonlySet<string> = new Set(['vetro', 'still', 'monet', 'cappella', 'tilt', 'cadenza']);
 
-/** 盒子上能流畅运行的背景（背景 registry 的 mode）。 */
-export const BOX_ALLOWED_BACKGROUNDS: ReadonlySet<string> = new Set(['common', 'latent', 'monet', 'nomand', 'sora', 'url']);
+/**
+ * 盒子上跑得动的背景（背景 registry 的 mode）。以“流光”样式实测（raf_backgrounds.json）：莫奈 11.6、漫游 10、嵌入 9.8、空 8；
+ * 屏蔽：通用 6.4、隐现 2.2。
+ */
+export const BOX_ALLOWED_BACKGROUNDS: ReadonlySet<string> = new Set(['monet', 'nomand', 'url', 'sora']);
 
 export const BOX_FALLBACK_VISUALIZER = 'vetro';
-export const BOX_FALLBACK_BACKGROUND = 'sora';
+export const BOX_FALLBACK_BACKGROUND = 'monet';
 
 /** 面板与 F9 里的“随机”选项，不是一个样式，保留。 */
 const RANDOM_CHOICE = '__random__';
